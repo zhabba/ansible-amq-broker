@@ -1,0 +1,57 @@
+
+- name: set up iptables
+  hosts: my-cluster
+  remote_user: root
+
+  vars_files:
+    [../defaults/main.yml]
+  vars:
+    # Environment setup
+    iptables_packet_policy: DROP # {DROP, REJECT}
+    iptables_protocol: tcp  # {tcp, udp}
+    iptables_state: present  # {present, absent}
+
+  tasks:
+    - include: ../tasks/configure_iptables_amq_broker.yml
+
+    - name: print firewall status
+      command: "iptables -L"
+      register: firewall_status
+
+    - debug: msg="{{ firewall_status.stdout }}"
+    - debug: msg="{{ firewall_status.stderr }}"
+
+
+
+    - include: ../tasks/configure_iptables_amq_broker.yml
+      vars:
+        iptables_state: absent
+
+    - name: print firewall status
+      command: "iptables -L"
+      register: firewall_status
+
+    - debug: msg="{{ firewall_status.stdout }}"
+    - debug: msg="{{ firewall_status.stderr }}"
+
+
+    # - name: test without force
+    #   hosts: my-cluster
+    #   remote_user: root
+    #   vars:
+    #     # Skip the install part (which takes a long time)
+    #     amq_broker_skip_install: true
+    #     # Note: adjust the download location according to your environment
+    #     amq_broker_download_url: http://ooo.englab.brq.redhat.com/packages/mrgm/jboss_amq/7.0.0/jboss-amq-7.0.0.redhat-1-bin.zip
+    #     amq_broker_download_dest: /tmp
+    #     amq_broker_install_dest: /home/{{ amq_broker_user }}
+    #     amq_broker_user: jamq
+    #     amq_broker_install_link: jboss-amq-7
+    #     amq_broker_jvm: java-1.8.0-openjdk-devel
+    #     amq_broker_jvm_install: true
+    #     amq_broker_instance_dir: jboss-amq-7-i0
+    #     amq_broker_instance_jmx_port: 1099
+    #     amq_broker_instance_create_force: false
+    #
+    #   roles:
+    #     - amq-broker
